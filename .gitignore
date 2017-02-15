@@ -1,3 +1,5 @@
+*.zip
+
 # Object files
 *.o
 *.ko

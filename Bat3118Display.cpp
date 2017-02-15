@@ -1,6 +1,8 @@
 #include "Bat3118Display.h"
 #include <math.h>
 
+#define logb(a,b) log(a)/log(b)
+
 Bat3118Display::Bat3118Display(int* pinsc, bool hwConfig, byte flashConfigc, long flashTimec) {
   hardwareConfig = hwConfig;
   flashConfig = flashConfigc;
@@ -28,13 +30,16 @@ void Bat3118Display::setSegment(byte segment, bool state) {
 }
 
 void Bat3118Display::setSegmentFlashing(byte segment, byte value) {
-  long cycle = millis()%((100/SEGMENTS)*flashTime);
-  if (cycle/(100/SEGMENTS)<=value) setSegment(segment, 1);
+  float for_segment = 100/SEGMENTS;
+  int millis_for_one_unit = for_segment*flashTime;
+  int phase = millis()%millis_for_one_unit;
+  int cycle = phase/flashTime;
+  if (cycle<=value) setSegment(segment, 1);
   else setSegment(segment, 0);
 }
 
 void Bat3118Display::setSegmentDimming(byte segment, byte value) {
-  analogWrite(pins[segment], abs(255*segmentOff-pow(pow(256.0,(SEGMENTS/100.0f)),value)) );//TODO: optimize
+  analogWrite(pins[segment], abs(logb(value+1), pow(21, 1/255.0f)) );//TODO: optimize//already optimized?
 }
 
 void Bat3118Display::setValue(int value) {
@@ -54,7 +59,7 @@ void Bat3118Display::setCharging(bool chargingc) {
 }
 
 void Bat3118Display::refreshDisplay() {
-  if ((!charging && !charged) || ((flashConfig & CHARGE_BORDER) && !(flashConfig & CHARGE_FLASHING))) {
+  if ((!charging && !charged) || !(flashConfig & CHARGE_FLASHING))) {
     if (flashConfig & FLASHING) {
       refreshDisplay(FLASHING);
     } else if (flashConfig & DIMMING) {
