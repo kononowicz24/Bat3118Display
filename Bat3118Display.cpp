@@ -39,8 +39,17 @@ void Bat3118Display::setSegmentFlashing(byte segment, byte value) {
 }
 
 void Bat3118Display::setSegmentDimming(byte segment, byte value) {
-  analogWrite(pins[segment], abs(logb(value+1), pow(21, 1/255.0f)) );//TODO: optimize//already optimized?
+  float logarithmic = logb((value+1), pow(21.0f, 1.0f/255.0f));
+  float linear = value*255.0f/20.0f;
+  float exponential = pow(pow(256.0,(SEGMENTS/100.0f)),value);
+  //Serial.print(logarithmic);
+  //Serial.print(" ");
+  //Serial.print(linear);
+  //Serial.print(" ");
+  //Serial.println(exponential);
+  analogWrite(pins[segment], abs(255*segmentOff-exponential);//TODO: optimize//already optimized?
 }
+
 
 void Bat3118Display::setValue(int value) {
   percentage = value;
@@ -59,7 +68,7 @@ void Bat3118Display::setCharging(bool chargingc) {
 }
 
 void Bat3118Display::refreshDisplay() {
-  if ((!charging && !charged) || !(flashConfig & CHARGE_FLASHING))) {
+  if ((!charging && !charged) || !(flashConfig & CHARGE_FLASHING)) {
     if (flashConfig & FLASHING) {
       refreshDisplay(FLASHING);
     } else if (flashConfig & DIMMING) {
